@@ -18,18 +18,40 @@ app.use(bodyParser.json());
 
 console.log(flights);
 app.get('/getFlights', async (req, res) => {
-    res.status(200).send(flights, 200);
+    try{
+            //  const values = [
+            //     element.carrier,
+            //     element.destination,
+            //     element.origin,
+            //     element.origin_country,
+            //     element.destination_country,
+            //     element.departure_time,
+            //     element.landing_time,
+            //     element.seat_left,
+            //     element.connection,
+            //     element.price,
+            //     element.date,
+            //  ];
+             const query = `SELECT * FROM flights`;
+             // (carrier, destination, origin, origin_country, destination_country, departure_time, landing_time , seats_left, connection, price, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            const result = connection.query(query, (error, results) => {
+                if (error) throw error;
+                // console.log(results);
+                res.status(200).send(results);
+              });
+         
+     }catch(e){
+         console.log("Error While trying to fetching data from the DB, Error: ", e)
+         res.status(400).send("Error While trying to fetching data from the DB, Error: ", e);
+     }
 });
 
 app.post('/insertFlights', async (req, res) => {
-    const flightsList = req.body.flightsList
-    
-    const query = `
-        INSERT INTO flights (carrier, destination, origin, origin_country, destination_country, takeoff, departure_time, seats_left, connection, date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    const flightsList = req.body.flights;
+    console.log(req)
+   
     try{
-        flightsList.array.forEach(element => {
+       flightsList.forEach(element => {
             const values = [
                 element.carrier,
                 element.destination,
@@ -40,20 +62,20 @@ app.post('/insertFlights', async (req, res) => {
                 element.landing_time,
                 element.seat_left,
                 element.connection,
+                element.price,
                 element.date,
             ];
-        });
-            
-        connection.query(query, values, (error, results) => {
-            if (error) throw error;
-            res.status(200).send(results);
-
+            const query = `
+                INSERT INTO flights (carrier, destination, origin, origin_country, destination_country, departure_time, landing_time , seats_left, connection, price, date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            connection.query(query, values);
         });
     }catch(e){
         console.log("Error While trying to insert data to the DB, Error: ", e)
         res.status(400).send("Error While trying to insert data to the DB, Error: ", e);
     }
-    res.status(200).send(flights, 200);
+    res.status(200).send(req.body.flights);
 });
 
 app.listen(port, () => console.log(`Hello world app listening on port ${port}!`));
