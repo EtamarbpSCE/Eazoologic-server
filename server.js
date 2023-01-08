@@ -22,10 +22,10 @@ const insert_seat = async (flightId, seats_list)=>{
         seats_list.forEach(element => {
             const values = [
                 flightId,
-                element,
+                element.seat,
             ];
             const query = `
-                INSERT INTO seats (fligh_id, seat)
+                INSERT INTO seats (flight_id, seat)
                 VALUES (?, ?)
             `;
             connection.query(query, values);
@@ -68,7 +68,8 @@ app.get('/getFlights', async (req, res) => {
 });
 
 app.get('/getTakenSeats', async (req, res) => {
-    const flight_id = req.body.flight_info.id;
+    const flight_id = req.query.flightId;
+    console.log("flight_id ", flight_id);
     try{
             const query = `SELECT seat FROM seats where flight_id = ${flight_id}`;
             const result = connection.query(query, (error, results) => {
@@ -77,8 +78,8 @@ app.get('/getTakenSeats', async (req, res) => {
             });
          
      }catch(e){
-            console.log("Error While trying to fetching data from the DB, Error: ", e)
-            res.status(400).send("Error While trying to fetching data from the DB, Error: ", e);
+            console.log("Error While trying to fetching data from the DB (getFlights), Error: ", e)
+            res.status(400).send("Error While trying to fetching data from the DB (getFlights), Error: ", e);
      }
 });
 
@@ -114,21 +115,23 @@ app.post('/insertFlights', async (req, res) => {
     res.status(200).send(req.body.flights);
 });
 app.post('/bookFlight', async (req, res) => {
-    const seats_list = req.body.flights;
-    const flightId = req.body.flight_info.id
-    await insert_seat(seats_list, flightId)
+    const flightId = req.body.flightId
+    const payment_info = req.body
+    await insert_seat(flightId, req.body.seats_list)
     try{
-        seats_list.forEach(element => {
-            const values = [
-                flightId,
-                element,
-            ];
-            const query = `
-                INSERT INTO seats (fligh_id, seat)
-                VALUES (?, ?)
-            `;
-            connection.query(query, values);
-        });
+        const values = [
+            flightId,
+            payment_info.id.value,
+            'card',
+            payment_info.phone_number.value,
+            payment_info.credit_card.value,
+            payment_info.CVV.value,
+        ];
+        const query = `
+            INSERT INTO orders (flight_id, costumer_id,payment_method,phone_number,credit_card,CVV)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+        connection.query(query, values);
     }catch(e){
         console.log("Error While trying to insert data to the DB, Error: ", e)
         res.status(400).send("Error While trying to insert data to the DB, Error: ", e);
