@@ -7,6 +7,11 @@ const app = express();
 const port = 3001;
 const connection = require('./mySQL');
 
+// TODO:
+// Create routes for Editing and Deleting from DB.
+// Add Admin password
+// 
+
 // Where we will keep books
 let books = [];
 
@@ -35,15 +40,19 @@ const insert_seat = async (flightId, seats_list)=>{
         res.status(400).send("Error While trying to insert data to the DB, Error: ", e);
     }
 } 
-const book_flight = async (flightId, payment_details)=>{
+const book_flight = async (flightId, payment_info)=>{
     try{
         const values = [
             flightId,
-            element,
+            payment_info.id.value,
+            'card',
+            payment_info.phone_number.value,
+            payment_info.credit_card.value,
+            payment_info.CVV.value,
         ];
         const query = `
-            INSERT INTO seats (fligh_id, seat)
-            VALUES (?, ?)
+            INSERT INTO orders (flight_id, costumer_id,payment_method,phone_number,credit_card,CVV)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
         connection.query(query, values);
     }catch(e){
@@ -117,21 +126,14 @@ app.post('/insertFlights', async (req, res) => {
 app.post('/bookFlight', async (req, res) => {
     const flightId = req.body.flightId
     const payment_info = req.body
+    const seats_list = req.body.seats_list;
     await insert_seat(flightId, req.body.seats_list)
+    await book_flight(flightId,payment_info )
     try{
-        const values = [
-            flightId,
-            payment_info.id.value,
-            'card',
-            payment_info.phone_number.value,
-            payment_info.credit_card.value,
-            payment_info.CVV.value,
-        ];
         const query = `
-            INSERT INTO orders (flight_id, costumer_id,payment_method,phone_number,credit_card,CVV)
-            VALUES (?, ?, ?, ?, ?, ?)
+            UPDATE flights SET seats_left = seats_left - ${seats_list.length} WHERE flights.id = ${flightId} 
         `;
-        connection.query(query, values);
+        connection.query(query);
     }catch(e){
         console.log("Error While trying to insert data to the DB, Error: ", e)
         res.status(400).send("Error While trying to insert data to the DB, Error: ", e);
