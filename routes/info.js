@@ -131,6 +131,57 @@ router.get('/vet_calls_logs', authMiddleware, async (req, res) => {
 
     }
 });
+router.get('/users', authMiddleware, async (req, res) => {
+    try{
+
+        const [rows] = await sql.query(`
+            SELECT 
+                *
+            FROM
+                users
+            WHERE
+                active = 1;
+            `
+        );
+        if (rows.length === 0) {
+            return res.status(200).send('No rows to display.');
+        }
+        
+        res.status(200).send({ rows });
+    } catch(e){
+        console.log("Error with get all_cages: ", e);
+
+    }
+});
+
+router.get('/users/:id', authMiddleware, async (req, res) => {
+    const {id} = req.params
+    console.log(id)
+    try{
+
+        const [rows] = await sql.query(`
+            SELECT 
+                full_name,
+                role,
+                email
+            FROM
+                users
+            WHERE
+                id = ?;
+            `
+        ,[id]);
+        if (rows.length === 0) {
+            return res.status(200).send('No rows to display.');
+        }
+        
+        res.status(200).send({ rows });
+    } catch(e){
+        console.log("Error with get all_cages: ", e);
+
+    }
+});
+
+
 
 module.exports = router;
 

@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const { generateToken, verifyToken, generateRandomString } = require('../constants/utils');
 const { sendEmail, sendEmailNewUser, sendEmailRegistrationSuccesfull } = require('../services/email');
 const { verify } = require('jsonwebtoken');
+const authMiddleware = require('../middleware/authMiddleware');
 // const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -117,6 +118,51 @@ router.post('/signup', async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(500).send(error);
+    }
+});
+
+router.post('/reset_password', async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const token = generateToken({email: email}, "1h");
+
+        // Hash the password
+        const [existingUser] = await sql.query('UPDATE users SET token = ?, active = 1 WHERE email = ?', [token, email]);
+        sendEmailNewUser(email, token);
+        
+        res.status(201).send({status:"Registered Succesfully."});
+    } catch (error) {
+        console.log(error)
+        res.status(500).send(error);
+    }
+});
+
+router.post('/users/:id', authMiddleware, async (req, res) => {
+    const {id} = req.params
+    const {fullName, role, email} = req.body
+    console.log(fullName)
+    try{
+
+        const [rows] = await sql.query(`
+            UPDATE 
+                users
+            SET
+                full_name = ?,
+                role = ?,
+                email = ?
+            WHERE
+                id = ?;
+            `
+        ,[fullName, role, email, id]);
+        if (rows.length === 0) {
+            return res.status(200).send('No rows to display.');
+        }
+        
+        res.status(200).send({ rows });
+    } catch(e){
+        console.log("Error with get all_cages: ", e);
+
     }
 });
 
