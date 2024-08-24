@@ -11,6 +11,7 @@ const authRouter = require('./routes/auth')
 const vetsRouter = require('./routes/vets')
 const keeperRouter = require('./routes/keeper')
 const infoRouter = require('./routes/info')
+const adminRouter = require('./routes/admin')
 const {upload} = require('./middleware/uploadImage')
 require('dotenv').config();
 
@@ -24,6 +25,7 @@ app.use('/auth', authRouter)
 app.use('/vets', vetsRouter)
 app.use('/keeper', keeperRouter)
 app.use('/info', infoRouter)
+app.use('/admin', adminRouter)
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 

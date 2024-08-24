@@ -51,6 +51,32 @@ router.get('/cage/:id',authMiddleware, async (req, res) => {
     const {id:cage_id} = req.params
     console.log(cage_id)
     try{
+        const [rows] = await sql.query( `
+            SELECT 
+                id,
+                animal_type,
+                title,
+                content
+            FROM 
+                cages 
+            WHERE 
+                id = ?
+        `, [cage_id]);
+        console.log(rows)
+        if (rows.length === 0) {
+        return res.status(200).send('No rows to display.');
+        }
+        res.status(200).send({ rows });
+    } catch(e){
+        console.log("Error with get all_cages: ", e);
+
+    }
+});
+
+router.get('/cage_animals/:id',authMiddleware, async (req, res) => {
+    const {id:cage_id} = req.params
+    console.log(cage_id)
+    try{
 
         const [rows] = await sql.query(`
             SELECT 
