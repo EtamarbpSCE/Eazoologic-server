@@ -10,6 +10,7 @@ const authMiddleware = (req, res, next) => {
     req.user = verified;
     next();
   } catch (err) {
+    res.redirect('/login');
     res.status(400).send('Invalid Token');
   }
 };

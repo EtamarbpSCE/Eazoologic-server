@@ -3,7 +3,7 @@ const router = express.Router();
 const sql = require("../mySQL");
 const bcrypt = require('bcrypt');
 const { generateToken, verifyToken, generateRandomString } = require('../constants/utils');
-const { sendEmail, sendEmailNewUser, sendEmailRegistrationSuccesfull } = require('../services/email');
+const { sendEmail, sendEmailNewUser, sendEmailRegistrationSuccesfull, sendEmailPasswordReset } = require('../services/email');
 const { verify } = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware');
 // const jwt = require('jsonwebtoken');
@@ -122,16 +122,20 @@ router.post('/signup', async (req, res) => {
 });
 
 router.post('/reset_password', async (req, res) => {
-    const { email } = req.body;
-
+    const { email, reset=false } = req.body;
+    console.log(email)
     try {
         const token = generateToken({email: email}, "1h");
 
         // Hash the password
         const [existingUser] = await sql.query('UPDATE users SET token = ?, active = 1 WHERE email = ?', [token, email]);
-        sendEmailNewUser(email, token);
+        if(reset){
+            sendEmailPasswordReset(email, token);
+        } else {
+            sendEmailNewUser(email, token)
+        }
         
-        res.status(201).send({status:"Registered Succesfully."});
+        res.status(201).send({status:"success."});
     } catch (error) {
         console.log(error)
         res.status(500).send(error);
