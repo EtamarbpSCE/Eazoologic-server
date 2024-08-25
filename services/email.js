@@ -8,7 +8,7 @@ const sendEmailNewUser = (email, token) =>{
     resend.emails.send({
         from: 'info@easzoologic.xyz',
         to: [email],
-        subject: `Welcome To${companyName} App`,
+        subject: `Welcome To ${companyName} App`,
         html: `<p style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
                     Hello,
                 </p>
