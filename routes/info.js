@@ -16,6 +16,7 @@ router.get('/all_cages',authMiddleware, async (req, res) => {
                 C.animal_type,
                 C.title,
                 C.content,
+                C.QR_path,
                 COALESCE(
                     JSON_ARRAYAGG(
                         JSON_OBJECT(
