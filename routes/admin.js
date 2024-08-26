@@ -9,6 +9,8 @@ const QRCode = require('qrcode');
 
 const {upload} = require('../middleware/uploadImage');
 const authMiddleware = require('../middleware/authMiddleware');
+
+
 router.post('/new_cage', authMiddleware, async (req, res) => {
     const { animalType, title, description, image_path, animals } = req.body;
 
@@ -60,6 +62,69 @@ router.post('/new_cage', authMiddleware, async (req, res) => {
         });
     } catch (e) {
         console.log("Error with creating new cage: ", e);
+        res.status(500).send('An error occurred.');
+    }
+});
+
+router.post('/new_cage/:id', authMiddleware, async (req, res) => {
+    const { animalType, title, description, image_path, animals } = req.body;
+    const cageId = req.params.id;
+
+    try {
+        // Update the existing cage
+        await sql.query(`
+            UPDATE cages 
+            SET animal_type = ?, title = ?, content = ?, image_path = ?
+            WHERE id = ?
+        `, [animalType, title, description, image_path, cageId]);
+
+        // Process each animal in the request
+        for (const element of animals) {
+            if (element.animal_id) {
+                // If animalId is present, update the existing animal
+                await sql.query(`
+                    UPDATE animals 
+                    SET animal_type = ?, animal_name = ?, animal_age = ?
+                    WHERE id = ? AND cage_id = ?
+                `, [animalType, element.animalName, element.animalAge, element.animal_id, cageId]);
+            } else {
+                // If animalId is not present, insert a new animal
+                await sql.query(`
+                    INSERT INTO 
+                        animals (animal_type, cage_id, animal_name, animal_age)
+                    VALUES (?, ?, ?, ?) 
+                `, [animalType, cageId, element.animalName, element.animalAge]);
+            }
+        }
+
+        // Create JSON object for QR code
+        const qrCodeJson = {
+            details: {
+                id: cageId
+            }
+        };
+
+        // Generate QR code as a data URL
+        const qrCodeText = JSON.stringify(qrCodeJson);
+        const qrCodePath = path.join(__dirname, '..', 'Images', `qr_${cageId}.png`);
+        await QRCode.toFile(qrCodePath, qrCodeText);
+
+        // Update the cage row with the QR code path
+        await sql.query(`
+            UPDATE cages 
+            SET QR_path = ? 
+            WHERE id = ?
+        `, [qrCodePath, cageId]);
+
+        // Respond with the details JSON object including the QR code
+        res.status(200).json({
+            details: {
+                id: cageId,
+                qr_code: qrCodePath
+            }
+        });
+    } catch (e) {
+        console.log("Error with updating cage: ", e);
         res.status(500).send('An error occurred.');
     }
 });

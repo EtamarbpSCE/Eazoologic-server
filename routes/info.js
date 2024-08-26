@@ -54,14 +54,33 @@ router.get('/cage/:id',authMiddleware, async (req, res) => {
     try{
         const [rows] = await sql.query( `
             SELECT 
-                id,
-                animal_type,
-                title,
-                content
+                C.id,
+                C.animal_type,
+                C.title,
+                C.content,
+                C.QR_path,
+                COALESCE(
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'animal_id', A.id,
+                            'animalName', A.animal_name,
+                            'animalAge', A.animal_age,
+                            'animalType', A.animal_type
+                        )
+                    ),
+                    JSON_ARRAY()
+                ) AS animals
             FROM 
-                cages 
-            WHERE 
-                id = ?
+                cages C
+            LEFT JOIN 
+                animals A ON C.id = A.cage_id
+            WHERE
+                C.id = ?
+            GROUP BY 
+                C.id, C.animal_type, C.title, C.content, C.QR_path
+            ORDER BY 
+                C.id;
+
         `, [cage_id]);
         console.log(rows)
         if (rows.length === 0) {
@@ -136,6 +155,51 @@ router.get('/vet_calls_logs', authMiddleware, async (req, res) => {
         console.log(rows)
         if (rows.length === 0) {
         return res.status(200).send('No rows to display.');
+        }
+        // need to retrive photos.
+        const vet_calls = rows.map(element => ({
+            id: element.id,
+            cage_id: element.cage_id,
+            type:element.animal_type,
+            creationDate: element.creation_datetime,   
+            expended_info:{
+                desciption: element.description,
+                name:element.animal_name,
+                type:element.animal_type,    
+                age:element.animal_age,
+                    
+            },
+            images:element.photo_path_array
+        }))
+        res.status(200).send({ vet_calls });
+    } catch(e){
+        console.log("Error with get all_cages: ", e);
+
+    }
+});
+router.get('/vet_calls_logs/:id', authMiddleware, async (req, res) => {
+    const {id:cage_id} = req.params
+    try{
+        const [rows] = await sql.query(`
+            SELECT 
+                vc.*,
+                vc.cage_id, 
+                vc.animal_id, 
+                vc.description, 
+                vc.status,
+                vc.photo_path_array, 
+                a.*   
+            FROM 
+                vet_calls vc 
+            JOIN 
+                animals a ON vc.animal_id = a.id
+            WHERE 
+                vc.cage_id = ?
+        `, [cage_id]);
+
+        console.log(rows)
+        if (rows.length === 0) {
+        return res.status(200).send([]);
         }
         // need to retrive photos.
         const vet_calls = rows.map(element => ({
