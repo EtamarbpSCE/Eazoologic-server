@@ -62,7 +62,7 @@ router.post('/new_cage', authMiddleware, async (req, res) => {
         });
     } catch (e) {
         console.log("Error with creating new cage: ", e);
-        res.status(500).send('An error occurred.');
+        res.status(500).send({error:e});
     }
 });
 
@@ -125,7 +125,7 @@ router.post('/new_cage/:id', authMiddleware, async (req, res) => {
         });
     } catch (e) {
         console.log("Error with updating cage: ", e);
-        res.status(500).send('An error occurred.');
+        res.status(500).send({error:e});
     }
 });
 
